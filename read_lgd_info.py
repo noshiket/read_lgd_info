@@ -52,8 +52,17 @@ def read_lgd_info(filepath, output_png=None):
             name = logo_header[0:32].decode('shift_jis', errors='ignore').rstrip('\x00')
         x, y, h, w, fi, fo, st, ed = struct.unpack('<hhhhhhhh', logo_header[32:48])
 
+        pixel_data_offset = 32 + 48 + (w * h * 12)
+        f.seek(pixel_data_offset)
+        ext_header_bytes = f.read(540)
+        service_id = "Unknown"
+        if len(ext_header_bytes) >= 540:
+            # Offset for serviceId: 40 (ints) + 256 (name + pad) = 296
+            service_id = struct.unpack('<i', ext_header_bytes[296:300])[0]
+        
         print(f"Logo File Information:")
         print(f"  Name: {name}")
+        print(f"  Service ID: {service_id}")
         print(f"  Position (x, y): ({x}, {y})")
         print(f"  Size (w x h): {w} x {h}")
         print(f"")
