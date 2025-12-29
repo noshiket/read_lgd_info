@@ -104,26 +104,20 @@ def read_lgd_info(filepath, output_png=None):
 
             # Create PNG image
             # Create RGBA image (with alpha channel for transparency)
+            f.seek(32 + 48)
             img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
             pixels = img.load()
 
             for py in range(h):
                 for px in range(w):
-                    idx = py * w + px
-                    if idx >= len(pixel_data):
-                        break
-
-                    p = pixel_data[idx]
-
-                    # Convert YCbCr to RGB
-                    r, g, b = ycbcr_to_rgb(p['y'], p['cb'], p['cr'])
-
-                    # Alpha is average of dp_y, dp_cb, dp_cr (0-1000 -> 0-255)
-                    # Higher dp value = more opaque logo
-                    alpha = int((p['dp_y'] + p['dp_cb'] + p['dp_cr']) / 3000.0 * 255.0)
-                    alpha = max(0, min(255, alpha))
-
-                    pixels[px, py] = (r, g, b, alpha)
+                    pixel_bytes = f.read(12)
+                    if len(pixel_bytes) < 12: break
+                    dp_y, y_val, dp_cb, cb_val, dp_cr, cr_val = struct.unpack('<hhhhhh', pixel_bytes)
+                    
+                    r, g, b = ycbcr_to_rgb(y_val, cb_val, cr_val)
+                    # Alpha calculation based on Amatsukaze logic
+                    alpha = int((dp_y + dp_cb + dp_cr) / 3000.0 * 255.0)
+                    pixels[px, py] = (r, g, b, max(0, min(255, alpha)))
 
             img.save(output_png)
             print(f"\nPNG saved to: {output_png}")
