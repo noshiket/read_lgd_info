@@ -1,0 +1,2 @@
+# Requirements for read_lgd_info.py PNG export feature
+Pillow>=9.0.0
